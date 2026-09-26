@@ -7,14 +7,11 @@ import java.util.List;
 @Service
 public class SimilarDataRetrievalService {
     private final EmbeddingService embeddingService;
-    private final ChromaService chromaService;
+    private final VectorStoreService vectorStoreService;
 
-    public SimilarDataRetrievalService(
-            EmbeddingService embeddingService,
-            ChromaService chromaService) {
-
+    public SimilarDataRetrievalService(EmbeddingService embeddingService, VectorStoreService vectorStoreService) {
         this.embeddingService = embeddingService;
-        this.chromaService = chromaService;
+        this.vectorStoreService = vectorStoreService;
     }
 
     public List<String> retrieve(String question) {
@@ -24,7 +21,7 @@ public class SimilarDataRetrievalService {
                 embeddingService.createEmbedding(question);
 
         // 2. Search Chroma
-        return chromaService.search(
+        return vectorStoreService.search(
                 queryEmbedding,
                 20
         );

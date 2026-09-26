@@ -2,6 +2,7 @@ package com.example.IpoPrediction.Service;
 
 import com.example.IpoPrediction.DO.ChromaSearchResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
@@ -10,7 +11,11 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class ChromaService {
+@ConditionalOnProperty(
+        name = "vector.store",
+        havingValue = "chroma"
+)
+public class ChromaService implements VectorStoreService{
     private static final String COLLECTIONS =
             "/api/v2/tenants/{tenant}/databases/{database}/collections";
     private static final String COLLECTION =

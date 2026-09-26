@@ -15,19 +15,18 @@ public class IpoIngestionService {
     private final IPODetailsWebScraperService scraper;
     private final TextChunkerService chunker;
     private final EmbeddingService embedding;
-    private final ChromaService chroma;
     private final IngestGuard ingestGuard;
+    private final VectorStoreService vectorStoreService;
 
     public IpoIngestionService(
             IPODetailsWebScraperService scraper,
             TextChunkerService chunker,
             EmbeddingService embedding,
-            ChromaService chroma,
-            IngestGuard ingestGuard) {
+            IngestGuard ingestGuard,VectorStoreService vectorStoreService) {
         this.scraper = scraper;
         this.chunker = chunker;
         this.embedding = embedding;
-        this.chroma = chroma;
+        this.vectorStoreService = vectorStoreService;
         this.ingestGuard = ingestGuard;
     }
 
@@ -35,7 +34,7 @@ public class IpoIngestionService {
         URI uri = ingestGuard.validateUrl(url);
         String source = uri.toString();
 
-        chroma.deleteBySource(source);
+        //vectorStoreService.deleteBySource(source);
 
         String content;
         try {
@@ -50,7 +49,7 @@ public class IpoIngestionService {
         for (int i = 0; i < chunks.size(); i++) {
             String chunk = chunks.get(i);
             List<Double> vector = embedding.createEmbedding(chunk);
-            chroma.store(
+            vectorStoreService.store(
                     "ipo-" + sourceKey + "-" + i,
                     chunk,
                     vector,

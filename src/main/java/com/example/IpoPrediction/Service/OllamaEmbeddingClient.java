@@ -33,7 +33,6 @@ public class OllamaEmbeddingClient implements EmbeddingClient {
         if (response == null || response.getEmbeddings() == null || response.getEmbeddings().isEmpty()) {
             throw new IllegalStateException("Ollama returned no embeddings");
         }
-
         return response.getEmbeddings().get(0);
     }
 }
