@@ -4,10 +4,12 @@ import com.example.IpoPrediction.DO.LLMResponse;
 import com.example.IpoPrediction.DO.OpenAiResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
 import java.util.Map;
+import java.util.logging.ErrorManager;
 import java.util.stream.Stream;
 
 @Service
@@ -32,6 +34,7 @@ public class IpoPredictService {
         this.systemPrompt = systemPrompt;
         this.model = model;
     }
+
 
     public LLMResponse predict(String query) {
         if (query == null || query.isBlank()) {
@@ -62,26 +65,33 @@ public class IpoPredictService {
                 "input", prompt
         );
 
-        OpenAiResponse response = restClient.post()
-                .uri("/v1/responses")
-                .header("Authorization", "Bearer " + apiKey)
-                .header("Content-Type", "application/json")
-                .body(request)
-                .retrieve()
-                .body(OpenAiResponse.class);
+        try{
+            OpenAiResponse response = restClient.post()
+                    .uri("/v1/responses")
+                    .header("Authorization", "Bearer " + apiKey)
+                    .header("Content-Type", "application/json")
+                    .body(request)
+                    .retrieve()
+                    .body(OpenAiResponse.class);
 
-        if (response == null || response.output() == null) {
-            return new LLMResponse("No response generated");
+            if (response == null || response.output() == null) {
+                return new LLMResponse("No response generated");
+            }
+
+            return response.output()
+                    .stream()
+                    .filter(output -> "message".equals(output.type()))
+                    .flatMap(output -> output.content() == null ? Stream.empty() : output.content().stream())
+                    .filter(content -> "output_text".equals(content.type()))
+                    .map(OpenAiResponse.Content::text)
+                    .findFirst()
+                    .map(LLMResponse::new)
+                    .orElse(new LLMResponse("No response generated"));
+
+        } catch (HttpClientErrorException.TooManyRequests e) {
+            throw new RuntimeException(
+                    "AI service is temporarily unavailable. Please try again later."
+            );
         }
-
-        return response.output()
-                .stream()
-                .filter(output -> "message".equals(output.type()))
-                .flatMap(output -> output.content() == null ? Stream.empty() : output.content().stream())
-                .filter(content -> "output_text".equals(content.type()))
-                .map(OpenAiResponse.Content::text)
-                .findFirst()
-                .map(LLMResponse::new)
-                .orElse(new LLMResponse("No response generated"));
     }
 }
